@@ -3,6 +3,10 @@ package com.gravitant;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openqa.selenium.Alert;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Capabilities;
@@ -97,7 +101,8 @@ public class Util {
     int failedTestsCounter = 0;
     int screenshotCounter = 0;
     int listItemRow = 0;
-    		
+    WebElement link = null;
+    
 	public Util() throws IOException {
 		super();
 	}
@@ -667,12 +672,6 @@ public class Util {
 			e.printStackTrace();
 		}
 	}
-	public int getTestCaseNumber(String tableXpath, String xpathValue) throws IOException{
-		waitForObject(tableXpath, xpathValue);
-		WebElement table = driver.findElement(findObject(tableXpath, xpathValue));
-		List<WebElement> rows  = table.findElements(By.tagName("tr"));
-		return rows.size();
-	}
 	public int getNumberOfSections(String xpathValue) throws IOException{
 		int numberOfSections = 0;
 		waitForObject("xpath", xpathValue);
@@ -681,63 +680,56 @@ public class Util {
 		numberOfSections = sections.size();
 		return numberOfSections;
 	}
-	/*public void clickListMenuItem(String objectLocatorType, String locatorValue, String listItem) throws InterruptedException, IOException{
-		String webTableXpath = null;
-		String menuXpath = null;
-		boolean foundMenuItem = false;
-		webTableXpath =  locatorValue.substring(0, locatorValue.lastIndexOf("table/")) + "table/tbody";
-		//System.out.println("Table xpath: " + webTableXpath);
-		LOGS.info("Table xpath: " + webTableXpath);
-		if(waitForObject(listItem, objectLocatorType, locatorValue) == true){
-			WebElement table = driver.findElement(findObject(objectLocatorType, webTableXpath));
-			List<WebElement> rows  = table.findElements(By.tagName("tr")); //find all tags with 'tr' (rows)
-			//System.out.println("Total Rows: " + rows.size()); //print number of rows
-			LOGS.info("Total Rows: " + rows.size()); 
-			for (int rowNum=0; rowNum<rows.size(); rowNum++){
-				System.out.println("Row No.: " + rowNum);
-				//System.out.println(rows.get(rowNum).getText());
-				if(foundMenuItem==true){break;}else{
-					WebElement row = driver.findElement(findObject(objectLocatorType, webTableXpath + "/tr[" + (rowNum+1) + "]"));
-					List<WebElement> columns  = row.findElements(By.tagName("td")); //find all tags with 'tr' (rows)
-					System.out.println("Total Columns: " + columns.size()); //print number of columns
-					//LOGS.info("Total Columns: " + columns.size()); 
-					for(int colNum=0; colNum<columns.size(); colNum++){
-						System.out.println("Row No.: " + rowNum);
-						String cellText = columns.get(colNum).getText().trim();
-						//System.out.println(cellText);
-						LOGS.info("Cell value: " + cellText);
-						if(cellText.contains(listItem.trim())){
-							String xpathSubString = locatorValue.substring(locatorValue.lastIndexOf("/tr[" + (rowNum+1) + "]"));
-							//System.out.println(xpathSubString);
-							LOGS.info("Xpath substring: " + xpathSubString);
-							menuXpath = webTableXpath + xpathSubString;
-							//System.out.println(menuXpath );
-							LOGS.info("Menu xpath: " + menuXpath);
-							try{
-								WebElement menu =driver.findElement(findObject(objectLocatorType, menuXpath));
-								((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", menu);
-								foundMenuItem = true;
-								break;
-							}catch(Exception e){
-								e.printStackTrace();
-								this.setErrorFlag(true);
-						    	LOGS.info(listItem  + " is not displayed or has changed position");
-								this.writeFailedStepToTempResultsFile(currentResultFilePath, this.reportEvent(this.currentTestName, this.currentTestStepNumber, this.currentTestStepName, listItem + " is not displayed or has changed position."));
-								this.captureScreen(this.currentTestName);
-						    	LOGS.info(e.getMessage());
-							}
-						}
-					}
-				}
-			}
-		}
-	}*/
-	public void clickLink(String objectLocatorType, String locatorValue) throws Exception{
+	public int getNumberOfTestCases(String xpathValue) throws IOException{
+		int numberOfTestCases = 0;
+		waitForObject("xpath", xpathValue);
+		WebElement table = driver.findElement(findObject("xpath", xpathValue));
+		List<WebElement> testCases  = table.findElements(By.tagName("tr"));  
+		numberOfTestCases = testCases.size();
+		return numberOfTestCases;
+	}
+	public String getSectionName(String xpathValue) throws IOException{
+		String sectionName = null;
+		waitForObject("xpath", xpathValue);
+		WebElement section = driver.findElement(By.xpath(xpathValue));
+		sectionName = section.getText();
+		return sectionName;
+	}
+	public WebElement getTestCaseLink(String xpathValue) throws IOException{
+		String testCaseLink = null;
+		waitForObject("xpath", xpathValue);
+		this.link = driver.findElement(findObject("xpath", xpathValue));
+		testCaseLink = link.getText();
+		System.out.println("Test Case: " + testCaseLink);
+		return link;
+	}
+	public void changeComponentName(String componentXpath, String componentName) throws IOException, InterruptedException{
+		FileInputStream xlFile = new FileInputStream(new File("C:\\Users\\Ramkanth Manga\\Documents\\Automation\\FunctionalAutomation\\TestRailProject\\cloudMatrix Functional Mapping.xlsx"));
+		XSSFWorkbook workbook = new XSSFWorkbook(xlFile);
+		XSSFSheet sheet = workbook.getSheetAt(1);//Get SECOND sheet from the workbook
+	    int rowNum = sheet.getLastRowNum() + 1;
+        int colNum = sheet.getRow(0).getLastCellNum();
+        for(int i = 1; i<rowNum; i++){
+            XSSFRow row = sheet.getRow(i);
+            XSSFCell oldComponentCell = row.getCell(0);
+            String oldValue = oldComponentCell.toString();
+            XSSFCell newComponentCell = row.getCell(1);
+            String newValue = newComponentCell.toString();
+            //System.out.println(oldValue);
+            if(componentName.equals(oldValue)){
+            	this.selectListBoxItem("xpath", componentXpath, newValue);
+            	break;
+            }
+        }
+	}
+	public String clickLink(String objectLocatorType, String locatorValue) throws Exception{
+		String linkName = null;
 		if(waitForObject(objectLocatorType, locatorValue) == true){
 			WebElement link = driver.findElement(findObject(objectLocatorType, locatorValue));
-			//link.click();
+			linkName = link.getText();
 			((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", link);
 		}
+		return linkName;
 	} 
 	/*public void clickMenuItem(String objectLocatorType, String locatorValue) throws IOException{
 		if(waitForObject("Menu item", objectLocatorType, locatorValue) == true){
@@ -774,9 +766,22 @@ public class Util {
 			}
 		}
 	}
-	/*public void selectListBoxItem(String objectLocatorType, final String locatorValue, String optionToSelect) throws IOException, InterruptedException{
-		if(waitForObject("Select box", objectLocatorType, locatorValue)== true){
-			Thread.sleep(4000);
+	public String getSelectedListBoxItem(String objectLocatorType, final String locatorValue) throws IOException, InterruptedException{
+		String currentSelection = null;
+		if(waitForObject(objectLocatorType, locatorValue)== true){
+			Thread.sleep(2000);
+			try{
+				Select selectBox = new Select(driver.findElement(findObject(objectLocatorType, locatorValue)));
+				currentSelection = selectBox.getFirstSelectedOption().getText();
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+		}
+		return currentSelection;
+	}
+	public void selectListBoxItem(String objectLocatorType, final String locatorValue, String optionToSelect) throws IOException, InterruptedException{
+		if(waitForObject(objectLocatorType, locatorValue)== true){
+			Thread.sleep(2000);
 			try{
 				WebElement selectBox = driver.findElement(findObject(objectLocatorType, locatorValue));
 				selectBox.sendKeys(optionToSelect);
@@ -793,7 +798,7 @@ public class Util {
 				}
 			}
 		}
-	}*/
+	}
 	/*public void selectRadioButtonItem(String objectLocatorType, String locatorValue, String testData) throws IOException, InterruptedException{
 		Thread.sleep(2000);
 		WebElement radioButton = null;
