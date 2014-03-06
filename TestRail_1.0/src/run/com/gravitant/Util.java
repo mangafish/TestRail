@@ -654,7 +654,8 @@ public class Util {
 	}
 	public void openTestSuite(String testSuiteXpath){
 		WebElement testSuiteLink = this.driver.findElement(By.xpath(testSuiteXpath));
-		System.out.println(testSuiteLink.getText());
+		System.out.println("*********************************************************");
+		System.out.println("Test Suite: " + testSuiteLink.getText());
 		((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", testSuiteLink);
 	}
 	
@@ -678,7 +679,17 @@ public class Util {
 		WebElement table = driver.findElement(findObject("xpath", xpathValue));
 		List<WebElement> sections  = table.findElements(By.xpath("//div[@id='groups']/child::*"));
 		numberOfSections = sections.size();
+		System.out.println("Number of sections in test suite: " + numberOfSections);
 		return numberOfSections;
+	}
+	public int getNumberOfSubSections(String xpathValue) throws IOException{
+		int numberOfSubSections = 0;
+		waitForObject("xpath", xpathValue);
+		WebElement table = driver.findElement(findObject("xpath", xpathValue));
+		List<WebElement> subSections  = table.findElements(By.xpath("//div[@id='groups']/child::*"));
+		numberOfSubSections = subSections.size();
+		System.out.println("Number of sections in test suite: " + numberOfSubSections);
+		return numberOfSubSections;
 	}
 	public int getNumberOfTestCases(String xpathValue) throws IOException{
 		int numberOfTestCases = 0;
@@ -686,6 +697,7 @@ public class Util {
 		WebElement table = driver.findElement(findObject("xpath", xpathValue));
 		List<WebElement> testCases  = table.findElements(By.tagName("tr"));  
 		numberOfTestCases = testCases.size();
+		System.out.println("\t\t" + "Number of test cases in section: " + (numberOfTestCases-1));
 		return numberOfTestCases;
 	}
 	public String getSectionName(String xpathValue) throws IOException{
@@ -703,12 +715,12 @@ public class Util {
 		System.out.println("Test Case: " + testCaseLink);
 		return link;
 	}
-	public void changeComponentName(String componentXpath, String componentName) throws IOException, InterruptedException{
+	public void changeComponentName(String componentXpath, String currentComponentName) throws IOException, InterruptedException{
 		FileInputStream xlFile = new FileInputStream(new File("C:\\Users\\Ramkanth Manga\\Documents\\Automation\\FunctionalAutomation\\TestRailProject\\cloudMatrix Functional Mapping.xlsx"));
 		XSSFWorkbook workbook = new XSSFWorkbook(xlFile);
 		XSSFSheet sheet = workbook.getSheetAt(1);//Get SECOND sheet from the workbook
 	    int rowNum = sheet.getLastRowNum() + 1;
-        int colNum = sheet.getRow(0).getLastCellNum();
+        //int colNum = sheet.getRow(0).getLastCellNum();
         for(int i = 1; i<rowNum; i++){
             XSSFRow row = sheet.getRow(i);
             XSSFCell oldComponentCell = row.getCell(0);
@@ -716,7 +728,7 @@ public class Util {
             XSSFCell newComponentCell = row.getCell(1);
             String newValue = newComponentCell.toString();
             //System.out.println(oldValue);
-            if(componentName.equals(oldValue)){
+            if(currentComponentName.equals(oldValue)){
             	this.selectListBoxItem("xpath", componentXpath, newValue);
             	break;
             }
@@ -728,6 +740,8 @@ public class Util {
 			WebElement link = driver.findElement(findObject(objectLocatorType, locatorValue));
 			linkName = link.getText();
 			((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", link);
+		}else{
+			linkName = "No test cases in this section";
 		}
 		return linkName;
 	} 
