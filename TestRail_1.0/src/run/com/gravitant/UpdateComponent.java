@@ -3,6 +3,7 @@ package com.gravitant;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 
@@ -40,8 +41,11 @@ public class UpdateComponent{
 	public  WebDriver driver;
 	int totalTestSuiteNumber = 0;
 	int sectionsInTestSuite = 0;
+	int numberOfLevel1SubSections = 0;
+	int numberOfLevel2SubSections = 0;
+	int numberOfLevel3SubSections = 0;
 	int testsInSection = 0;
-	int numberOfSubSections = 0;
+	String tableXpath = null;
 	String testCaseName = null;
 	String currentComponentName = null;
 	String changedComponentName = null;
@@ -61,60 +65,42 @@ public class UpdateComponent{
 		util.clickButton("xpath", "//*[@id='authContent']/form/ul/li[4]/button");//click login button
 		util.clickLink("xpath", "//*[@id='project-1']/td[2]/div[1]/a");//click 'cloudMatrix' link in Dashboard
 		util.clickLink("xpath", "html/body/div[1]/div[2]/div[3]/ul/li[6]/a");//click 'Test Suites & Cases' tab
+		this.tableXpath = "html/body/div[1]/table";
 		totalTestSuiteNumber = util.getTestSuiteNumber("xpath", "html/body/div[1]/table"); //get total number of test suites in cloudMatrix project
-		for(int i=3; i<=totalTestSuiteNumber-1;i++){
-			String testSuiteXpath = "html/body/div[1]/table/tbody/tr/td[1]/div[3]/table/tbody/tr[" + i + "]/td[2]/div[1]/a";
-			util.openTestSuite(testSuiteXpath);
-			sectionsInTestSuite = util.getNumberOfSections("html/body/div[1]/table/tbody/tr/td[1]/div[3]/child::*/div/div");
-			if(sectionsInTestSuite==1){
-				System.out.println("*******************************************");
-				System.out.println("\t" + "Section : " + util.getSectionName("html/body/div[1]/table/tbody/tr/td[1]/div[3]/div[6]/div/div/div/div[1]/span[1]"));
-				numberOfSubSections = 
-				testsInSection = util.getNumberOfTestCases("html/body/div[1]/table/tbody/tr/td[1]/div[3]/div[6]/div/div/div/table");
-				for(int k=1; k<=testsInSection-1; k++){
-					testCaseName = util.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/div[6]/div/div/div/table/tbody/tr[" + (k+1) + "]/td[4]/a[1]/span");//open the test case
-					if(!testCaseName.contains("No test cases")){
-						System.out.println("\t\t" + "******************************************");
-						System.out.println("\t\t" + "Opening test case: " + testCaseName);
-						util.clickButton("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[1]/div/span[1]/a");//click the 'Edit' button in the test case
-						currentComponentName = util.getSelectedListBoxItem("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
-						if(currentComponentName!=null){
-							util.changeComponentName("html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select", currentComponentName);
-							changedComponentName = util.getSelectedListBoxItem("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
-							System.out.println("\t\t" + "Changed: " + "\"" + currentComponentName + "\"" + " to: " + "\"" + changedComponentName + "\"");
-							util.clickButton("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/ul[3]/li/button");//click the 'Save Test Case' button
-							util.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[2]/a[3]");//click the test suite link to go back to list of test cases
-						}else{
-							util.clickLink("xpath", "//*[@id='content']/form/ul[3]/li/a[contains(., 'Cancel')]");//click the test suite link to go back to list of test cases
-							util.clickLink("xpath", "//*[@id='breadcrumb']/a[3]");
-						}
-					}else{continue;}
-				}
-			}else{
-				for(int j=1;j<=sectionsInTestSuite; j++){
+		for(int i=11; i<=totalTestSuiteNumber-1;i++){
+			String testSuiteXpath = tableXpath + "/tbody/tr/td[1]/div[3]/table/tbody/tr[" + i + "]/td[2]/div[1]/a";
+			util.openTestSuite(testSuiteXpath, i);
+			sectionsInTestSuite = util.getNumberOfSubItems(tableXpath, "//div[3]/child::*/div/div/div[starts-with(@id,'section')]");
+			System.out.println("No. of Sections: " + sectionsInTestSuite);
+			if(sectionsInTestSuite > 0){
+				for(int j=1;j<=sectionsInTestSuite;j++){
 					System.out.println("*******************************************");
-					System.out.println("\t" + "Section : " + util.getSectionName("html/body/div[1]/table/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[1]/span[1]"));
-					testsInSection = util.getNumberOfTestCases("html/body/div[1]/table/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/table");
-					for(int k=1; k<=testsInSection-1; k++){
-						testCaseName = util.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/table/tbody/tr[" + (k+1) + "]/td[4]/a[1]/span");//open the test case
-						if(!testCaseName.contains("No test cases")){
-							System.out.println("\t\t" + "******************************************");
-							System.out.println("\t\t" + "Opening test case: " + testCaseName);
-							util.clickButton("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[1]/div/span[1]/a");//click the 'Edit' button in the test case
-							currentComponentName = util.getSelectedListBoxItem("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
-							if(currentComponentName.isEmpty()){
-								util.clickLink("xpath", "//*[@id='content']/form/ul[3]/li/a[contains(., 'Cancel')]");//click the test suite link to go back to list of test cases
-								util.clickLink("xpath", "//*[@id='breadcrumb']/a[3]");
-							}else{
-								util.changeComponentName("html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select", currentComponentName);
-								changedComponentName = util.getSelectedListBoxItem("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
-								System.out.println("\t\t" + "Changed: " + "\"" + currentComponentName + "\"" + " to: " + "\"" + changedComponentName + "\"");
-								util.clickButton("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/ul[3]/li/button");//click the 'Save Test Case' button
-								util.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[2]/a[3]");//click the test suite link to go back to list of test cases
-							}
-						}else{continue;}
+					System.out.println("\t" + "Section : " + util.getSectionName(tableXpath + "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[1]/span[1]"));
+					testsInSection = (util.getNumberOfTestCases(tableXpath + "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/table/tbody")) -1;
+					util.updateTestCases(testsInSection, "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/table/tbody");
+					/******************************************/
+					System.out.println("\t\t" + "**************************");
+					numberOfLevel1SubSections = util.getNumberOfSubItems(tableXpath, "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[4]/div");
+					System.out.println("\t\t" + "No. of Level 1 Sub-sections: " + numberOfLevel1SubSections );
+ 					if(numberOfLevel1SubSections > 0){
+ 						for(int k=0;k<=numberOfLevel1SubSections;k++){
+ 							testsInSection = util.getNumberOfTestCases(tableXpath + "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[4]/div[" + k + "]/table/tbody");
+ 	 						util.updateTestCases(testsInSection, "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[4]/div[" + k + "]/table/tbody");
+ 						}
+ 					}
+					/******************************************/
+					System.out.println("\t\t\t" + "**************************");
+					numberOfLevel2SubSections = util.getNumberOfSubItems(tableXpath, "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[4]/div/div[4]/div");
+					System.out.println("\t\t\t" + "No. of Level 2 Sub-sections: " + numberOfLevel2SubSections );
+					if(numberOfLevel2SubSections > 0){
+						for(int m=0;m<=numberOfLevel2SubSections;m++){
+							testsInSection = util.getNumberOfTestCases(tableXpath + "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[4]/div/div[4]/div[" + m + "]/table/tbody");
+							util.updateTestCases(testsInSection, "/tbody/tr/td[1]/div[3]/child::*/div/div/div[" + j + "]/div[4]/div/div[4]/div[" + m + "]/table/tbody");
+ 						}
 					}
 				}
+			}else{
+				util.clickLink("xpath", "//*[@id='breadcrumb']/a");//if there are no test cases in the test suite go back to list of test suites
 			}
 			System.out.println("*******************************************");
 			util.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[2]/a");

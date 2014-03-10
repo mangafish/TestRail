@@ -588,7 +588,7 @@ public class Util {
 	}
 	
 	public boolean waitForObject(String objectLocatorType, String locatorValue) throws IOException{
-		WebDriverWait wait = new WebDriverWait(driver, this.globalWaitTime);
+		WebDriverWait wait = new WebDriverWait(this.driver, this.globalWaitTime);
 		boolean objectExists = false;
 		try{
 			  wait.until(ExpectedConditions.presenceOfElementLocated(findObject(objectLocatorType, locatorValue)));
@@ -598,7 +598,8 @@ public class Util {
 		}catch(NoSuchElementException nse){                         
 			objectExists = false;
 		}catch(Exception e){
-			e.printStackTrace();
+			//e.printStackTrace();
+			objectExists = false;
 		}
 		return objectExists;
 	}
@@ -652,10 +653,11 @@ public class Util {
 		List<WebElement> rows  = table.findElements(By.tagName("tr"));
 		return rows.size();
 	}
-	public void openTestSuite(String testSuiteXpath){
+	public void openTestSuite(String testSuiteXpath, int testSuiteNumber) throws IOException{
+		waitForObject("xpath", testSuiteXpath);
 		WebElement testSuiteLink = this.driver.findElement(By.xpath(testSuiteXpath));
 		System.out.println("*********************************************************");
-		System.out.println("Test Suite: " + testSuiteLink.getText());
+		System.out.println("Test Suite: " + testSuiteNumber + ". " + testSuiteLink.getText());
 		((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", testSuiteLink);
 	}
 	
@@ -673,14 +675,18 @@ public class Util {
 			e.printStackTrace();
 		}
 	}
-	public int getNumberOfSections(String xpathValue) throws IOException{
-		int numberOfSections = 0;
-		waitForObject("xpath", xpathValue);
-		WebElement table = driver.findElement(findObject("xpath", xpathValue));
-		List<WebElement> sections  = table.findElements(By.xpath("//div[@id='groups']/child::*"));
-		numberOfSections = sections.size();
-		System.out.println("Number of sections in test suite: " + numberOfSections);
-		return numberOfSections;
+	public int getNumberOfSubItems(String tableXpath, String xpathValue) throws IOException{
+		int numberOfSubItems = 0;
+		waitForObject("xpath", tableXpath);
+		WebElement table = driver.findElement(findObject("xpath", tableXpath));
+	
+		try{
+			List<WebElement> subItems  = driver.findElements(findObject("xpath", tableXpath + xpathValue));
+			numberOfSubItems = subItems.size();
+		}catch(Exception e){
+			numberOfSubItems = 0;
+		}
+		return numberOfSubItems;
 	}
 	public int getNumberOfSubSections(String xpathValue) throws IOException{
 		int numberOfSubSections = 0;
@@ -693,11 +699,12 @@ public class Util {
 	}
 	public int getNumberOfTestCases(String xpathValue) throws IOException{
 		int numberOfTestCases = 0;
-		waitForObject("xpath", xpathValue);
-		WebElement table = driver.findElement(findObject("xpath", xpathValue));
-		List<WebElement> testCases  = table.findElements(By.tagName("tr"));  
-		numberOfTestCases = testCases.size();
-		System.out.println("\t\t" + "Number of test cases in section: " + (numberOfTestCases-1));
+		if(waitForObject("xpath", xpathValue) == true){
+			WebElement table = driver.findElement(findObject("xpath", xpathValue));
+			List<WebElement> testCases  = table.findElements(By.tagName("tr"));  
+			numberOfTestCases = testCases.size();
+			System.out.println("\t\t" + "Number of test cases in section: " + (numberOfTestCases-1));
+		}
 		return numberOfTestCases;
 	}
 	public String getSectionName(String xpathValue) throws IOException{
@@ -715,6 +722,33 @@ public class Util {
 		System.out.println("Test Case: " + testCaseLink);
 		return link;
 	}
+	public void updateTestCases(int numberOfTestCases, String xpath) throws Exception{
+		String tableXpath = "html/body/div[1]/table";
+		String testCaseName = null;
+		String currentComponentName = null;
+		String changedComponentName = null;
+		if(numberOfTestCases > 0){
+			for(int k=1;k<=numberOfTestCases;k++){
+				testCaseName = this.clickLink("xpath", tableXpath + xpath + "/tr[" + (k+1) + "]/td[4]/a[1]/span");//open the test case
+				if(!testCaseName.contains("No test cases")){
+					System.out.println("\t\t" + "******************************************");
+					System.out.println("\t\t" + "Opening test case: " + testCaseName);
+	  				this.clickButton("xpath", tableXpath + "/tbody/tr/td[1]/div[1]/div/span[1]/a");//click the 'Edit' button in the test case
+					currentComponentName = this.getSelectedListBoxItem("xpath", tableXpath + "/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
+					if(currentComponentName.isEmpty()){
+						this.clickLink("xpath", "//*[@id='content']/form/ul[3]/li/a[contains(., 'Cancel')]");//click the test suite link to go back to list of test cases
+						this.clickLink("xpath", "//*[@id='breadcrumb']/a[3]");
+					}else{
+						this.changeComponentName("html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select", currentComponentName);
+						changedComponentName = this.getSelectedListBoxItem("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
+						System.out.println("\t\t" + "Changed: " + "\"" + currentComponentName + "\"" + " to: " + "\"" + changedComponentName + "\"");
+						this.clickButton("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/ul[3]/li/button");//click the 'Save Test Case' button
+						this.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[2]/a[3]");//click the test suite link to go back to list of test cases
+					}
+				}else{continue;}
+			}
+		}
+	}
 	public void changeComponentName(String componentXpath, String currentComponentName) throws IOException, InterruptedException{
 		FileInputStream xlFile = new FileInputStream(new File("C:\\Users\\Ramkanth Manga\\Documents\\Automation\\FunctionalAutomation\\TestRailProject\\cloudMatrix Functional Mapping.xlsx"));
 		XSSFWorkbook workbook = new XSSFWorkbook(xlFile);
@@ -728,6 +762,9 @@ public class Util {
             XSSFCell newComponentCell = row.getCell(1);
             String newValue = newComponentCell.toString();
             //System.out.println(oldValue);
+            if(currentComponentName.equals(newValue)){
+            	break;
+            }
             if(currentComponentName.equals(oldValue)){
             	this.selectListBoxItem("xpath", componentXpath, newValue);
             	break;
