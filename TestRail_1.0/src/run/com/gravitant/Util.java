@@ -749,6 +749,39 @@ public class Util {
 			}
 		}
 	}
+	public void updateTestCase(String tableXpath, String xpath) throws Exception{
+		WebDriverWait wait = new WebDriverWait(this.driver, 2);
+		List<WebElement> linksList = driver.findElements(By.xpath(xpath));
+		System.out.println("No. of Test Cases: " + linksList.size());
+		List<String> testCaseNames = new ArrayList<String>();
+		String currentComponentName = null;
+		String changedComponentName = null;
+		System.out.println(linksList.toArray().toString());
+		for(int i=0; i<linksList.size();i++){
+    		testCaseNames.add(i, linksList.get(i).getText());
+ 	    }
+	    if(linksList.size()>0){
+	    	for(int j=0; j<=testCaseNames.size(); j++){
+	    		wait.until(ExpectedConditions.presenceOfElementLocated(By.linkText(testCaseNames.get(j))));
+				((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", driver.findElement(By.linkText(testCaseNames.get(j))));
+				System.out.println("\t\t" + "******************************************");
+				System.out.println("\t\t" + "Opening test case: " + j + ". " + testCaseNames.get(j));
+				this.clickButton("xpath", tableXpath + "/tbody/tr/td[1]/div[1]/div/span[1]/a");//click the 'Edit' button in the test case
+				currentComponentName = this.getSelectedListBoxItem("xpath", tableXpath + "/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
+				if(currentComponentName.isEmpty()){
+					this.clickLink("xpath", "//*[@id='content']/form/ul[3]/li/a[contains(., 'Cancel')]");//click the test suite link to go back to list of test cases
+					this.clickLink("xpath", "//*[@id='breadcrumb']/a[3]");
+				}else{
+					this.changeComponentName("html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select", currentComponentName);
+					changedComponentName = this.getSelectedListBoxItem("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
+					System.out.println("\t\t" + "Changed: " + "\"" + currentComponentName + "\"" + " to: " + "\"" + changedComponentName + "\"");
+					this.clickButton("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[3]/form/ul[3]/li/button");//click the 'Save Test Case' button
+					this.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[2]/a[3]");//click the test suite link to go back to list of test cases
+					//Thread.sleep(2000);
+				}
+	    	} 
+	    }
+	}
 	public void changeComponentName(String componentXpath, String currentComponentName) throws IOException, InterruptedException{
 		FileInputStream xlFile = new FileInputStream(new File("C:\\Users\\Ramkanth Manga\\Documents\\Automation\\FunctionalAutomation\\TestRailProject\\cloudMatrix Functional Mapping.xlsx"));
 		XSSFWorkbook workbook = new XSSFWorkbook(xlFile);
@@ -781,6 +814,13 @@ public class Util {
 			linkName = "No test cases in this section";
 		}
 		return linkName;
+	} 
+	public void clickLink(WebElement link) throws Exception{
+		if(link.isDisplayed() == true){
+			((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", link);
+		}else{
+			System.out.println("No test cases in this section");
+		}
 	} 
 	/*public void clickMenuItem(String objectLocatorType, String locatorValue) throws IOException{
 		if(waitForObject("Menu item", objectLocatorType, locatorValue) == true){
