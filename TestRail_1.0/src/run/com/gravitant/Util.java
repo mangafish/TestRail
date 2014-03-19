@@ -101,6 +101,7 @@ public class Util {
     int failedTestsCounter = 0;
     int screenshotCounter = 0;
     int listItemRow = 0;
+    int testCaseNumber = 0;
     WebElement link = null;
     
 	public Util() throws IOException {
@@ -659,6 +660,7 @@ public class Util {
 		System.out.println("*********************************************************");
 		System.out.println("Test Suite: " + testSuiteNumber + ". " + testSuiteLink.getText());
 		((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", testSuiteLink);
+		WebDriverWait wait = new WebDriverWait(this.driver, 2);
 	}
 	
 	public void openTestCase(String xpathValue)throws IOException{
@@ -750,22 +752,23 @@ public class Util {
 		}
 	}
 	public void updateTestCase(String tableXpath, String xpath) throws Exception{
-		WebDriverWait wait = new WebDriverWait(this.driver, 2);
+		waitForObject("xpath", xpath);
+		WebDriverWait wait = new WebDriverWait(this.driver, 3);
 		List<WebElement> linksList = driver.findElements(By.xpath(xpath));
 		System.out.println("No. of Test Cases: " + linksList.size());
 		List<String> testCaseNames = new ArrayList<String>();
 		String currentComponentName = null;
 		String changedComponentName = null;
-		System.out.println(linksList.toArray().toString());
 		for(int i=0; i<linksList.size();i++){
     		testCaseNames.add(i, linksList.get(i).getText());
  	    }
 	    if(linksList.size()>0){
-	    	for(int j=0; j<=testCaseNames.size(); j++){
+	    	for(int j=0; j<=testCaseNames.size()-1; j++){
+	    		testCaseNumber = testCaseNumber+1;
 	    		wait.until(ExpectedConditions.presenceOfElementLocated(By.linkText(testCaseNames.get(j))));
 				((JavascriptExecutor)this.driver).executeScript("arguments[0].click()", driver.findElement(By.linkText(testCaseNames.get(j))));
 				System.out.println("\t\t" + "******************************************");
-				System.out.println("\t\t" + "Opening test case: " + j + ". " + testCaseNames.get(j));
+				System.out.println("\t\t" + "Test case:" + testCaseNumber + ". " + testCaseNames.get(j));
 				this.clickButton("xpath", tableXpath + "/tbody/tr/td[1]/div[1]/div/span[1]/a");//click the 'Edit' button in the test case
 				currentComponentName = this.getSelectedListBoxItem("xpath", tableXpath + "/tbody/tr/td[1]/div[3]/form/div/table/tbody/tr[2]/td[3]/select");
 				if(currentComponentName.isEmpty()){

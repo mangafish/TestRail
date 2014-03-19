@@ -67,10 +67,10 @@ public class UpdateComponent{
 		util.clickLink("xpath", "html/body/div[1]/div[2]/div[3]/ul/li[6]/a");//click 'Test Suites & Cases' tab
 		this.tableXpath = "html/body/div[1]/table";
 		totalTestSuiteNumber = util.getTestSuiteNumber("xpath", "html/body/div[1]/table"); //get total number of test suites in cloudMatrix project
-		for(int i=55; i<=totalTestSuiteNumber-1;i++){
+		for(int i=24; i<=25;i++){
 			String testSuiteXpath = tableXpath + "/tbody/tr/td[1]/div[3]/table/tbody/tr[" + i + "]/td[2]/div[1]/a";
 			util.openTestSuite(testSuiteXpath, i);
-			util.updateTestCase(tableXpath, "//a[1]/span[contains(@class,'title')]");
+			util.updateTestCase(tableXpath, "//td[4]/a[1]/span[contains(@class,'title')]");
 			System.out.println("*******************************************");
 			util.clickLink("xpath", "html/body/div[1]/table/tbody/tr/td[1]/div[2]/a");
 		}
